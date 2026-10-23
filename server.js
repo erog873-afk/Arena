@@ -36,7 +36,7 @@ const PORT = process.env.PORT || 3000;
 // 5. Баланс нового игрока.
 //    Если указан BOT_TOKEN, по умолчанию новые игроки получают 0 звёзд.
 //    Для теста можно поставить 200, но это не изменит балансы уже созданных игроков.
-const START_BALANCE = 200;
+const START_BALANCE = 2000;
 
 // 6. Допуск гостевых пользователей.
 //    true — разрешить вход без Telegram (удобно для локального теста).
@@ -44,7 +44,7 @@ const START_BALANCE = 200;
 const ALLOW_GUEST = !BOT_TOKEN || BOT_TOKEN.startsWith('ВСТАВЬ_');
 
 // 7. Игровые параметры.
-const FEE_PERCENT = 0;  // Комиссия с банка, проценты.
+const FEE_PERCENT = 10;  // Комиссия с банка, проценты.
 const COUNTDOWN = 20;   // Секунд до старта после второй ставки.
 const WAIT_TIMEOUT = 120; // Секунд ожидания второго игрока.
 const MIN_BET = 10;
