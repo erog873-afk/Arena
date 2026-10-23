@@ -24,7 +24,7 @@ const BOT_TOKEN = '8884195033:AAG_UPjYCKkVzcwvyjhVyIXDfAiejQJ75DY';
 
 // 2. Публичная HTTPS-ссылка на сервер (например, адрес сервиса Render).
 //    Если PUBLIC_URL не указан, вебхук Telegram автоматически не установится.
-const PUBLIC_URL = 'https://ВСТАВЬ_ССЫЛКУ_СВОЕГО_СЕРВЕРА';
+const PUBLIC_URL = 'https://arena-0gpy.onrender.com';
 
 // 3. Секретный ключ для ручного пополнения через /api/admin/credit.
 //    Придумай длинную случайную строку и никому её не отправляй.
