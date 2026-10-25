@@ -72,7 +72,7 @@ const cfg = {
   feePercent: FEE_PERCENT,
   countdown: COUNTDOWN,
   waitTimeout: WAIT_TIMEOUT,
-  runMs: 7000,
+  runMs: 17000,
   doneHoldMs: 3500,
   testGrant: TEST_GRANT,
   min: MIN_BET,
