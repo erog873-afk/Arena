@@ -36,7 +36,7 @@ const PORT = process.env.PORT || 3000;
 // 5. Баланс нового игрока.
 //    Если указан BOT_TOKEN, по умолчанию новые игроки получают 0 звёзд.
 //    Для теста можно поставить 200, но это не изменит балансы уже созданных игроков.
-const START_BALANCE = 2000;
+const START_BALANCE = 200;
 
 // 6. Допуск гостевых пользователей.
 //    true — разрешить вход без Telegram (удобно для локального теста).
@@ -44,9 +44,12 @@ const START_BALANCE = 2000;
 const ALLOW_GUEST = !BOT_TOKEN || BOT_TOKEN.startsWith('ВСТАВЬ_');
 
 // 7. Игровые параметры.
-const FEE_PERCENT = 10;  // Комиссия с банка, проценты.
+const FEE_PERCENT = 0;  // Комиссия с банка, проценты.
 const COUNTDOWN = 20;   // Секунд до старта после второй ставки.
 const WAIT_TIMEOUT = 120; // Секунд ожидания второго игрока.
+// 8. ТЕСТ. Сколько звёзд один раз получает каждый, кто зашёл в игру. После теста поставь 0.
+const TEST_GRANT = 100;
+
 const MIN_BET = 10;
 const MAX_BET = 20000;
 
@@ -71,6 +74,7 @@ const cfg = {
   waitTimeout: WAIT_TIMEOUT,
   runMs: 7000,
   doneHoldMs: 3500,
+  testGrant: TEST_GRANT,
   min: MIN_BET,
   max: MAX_BET,
 };
@@ -220,6 +224,7 @@ function publicState() {
     secret: game.revealed ? game.secret : null,
     min: cfg.min,
     max: cfg.max,
+    fee: cfg.feePercent,
   };
 }
 
@@ -317,9 +322,9 @@ function startRun() {
   game.winnerUid = win.uid;
   game.seed = hmac(game.secret, 'puck:' + game.id).readUInt32BE(0);
   game.phase = 'run';
-  game.runStartAt = Date.now() + 600;
+  game.runStartAt = Date.now();
   broadcastState();
-  setTimeout(finishGame, 600 + cfg.runMs + 300);
+  setTimeout(finishGame, cfg.runMs + 300);
 }
 
 function finishGame() {
@@ -401,6 +406,9 @@ async function handleTelegramUpdate(u) {
 /* ───────────── HTTP ───────────── */
 const INDEX = path.join(__dirname, 'public', 'index.html');
 const rate = new Map();
+const emojiLog = new Map();   // uid -> времена последних смайликов
+const EMOJI_MAX = 5;          // максимум смайликов подряд
+const EMOJI_WINDOW = 2000;    // через сколько мс можно снова
 
 function limited(uid, key, ms) {
   const k = uid + key;
@@ -500,6 +508,11 @@ const server = http.createServer(async (req, res) => {
         return json(res, 401, { error: 'Откройте игру из Telegram' });
       }
 
+      if (cfg.testGrant > 0 && !user.testGranted) {
+        user.testGranted = true;
+        user.balance += cfg.testGrant;
+      }
+
       save();
       return json(res, 200, {
         token: newSession(user.id),
@@ -539,12 +552,19 @@ const server = http.createServer(async (req, res) => {
       }
 
       if (p === '/api/emoji') {
-        if (limited(user.id, 'emoji', 700)) {
-          return json(res, 429, { error: 'Слишком часто' });
-        }
         if (!EMOJIS.includes(b.e) || !game.bets.some(x => x.uid === user.id)) {
           return json(res, 400, { error: 'Нельзя' });
         }
+        // Не больше EMOJI_MAX смайликов за EMOJI_WINDOW мс. Дальше — тихо игнорируем,
+        // через 2 секунды после первого из пяти можно снова отправлять.
+        const nowMs = Date.now();
+        const log = (emojiLog.get(user.id) || []).filter(t => nowMs - t < EMOJI_WINDOW);
+        if (log.length >= EMOJI_MAX) {
+          emojiLog.set(user.id, log);
+          return json(res, 200, { ok: false });
+        }
+        log.push(nowMs);
+        emojiLog.set(user.id, log);
         for (const c of clients) sse(c.res, 'emoji', { id: user.pid, e: b.e });
         return json(res, 200, { ok: true });
       }
