@@ -72,7 +72,7 @@ const cfg = {
   feePercent: FEE_PERCENT,
   countdown: COUNTDOWN,
   waitTimeout: WAIT_TIMEOUT,
-  runMs: 8000,
+  runMs: 10000,
   doneHoldMs: 3500,
   testGrant: TEST_GRANT,
   min: MIN_BET,
@@ -626,3 +626,4 @@ server.listen(cfg.port, async () => {
     }
   }
 });
+
