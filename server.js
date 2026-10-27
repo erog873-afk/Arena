@@ -5,7 +5,7 @@
  * HTTP + Server-Sent Events (EventSource) + POST-запросы.
  *
  * НАСТРОЙКИ ДЛЯ ЗАПОЛНЕНИЯ находятся ниже.
- * Не вставляйте токен бота в public/index.html — только в этот файл.
+ * Не вставляйте токен бота в index.html — только в этот файл.
  */
 
 const http = require('http');
@@ -404,7 +404,11 @@ async function handleTelegramUpdate(u) {
 }
 
 /* ───────────── HTTP ───────────── */
-const INDEX = path.join(__dirname, 'public', 'index.html');
+const INDEX = path.join(__dirname, 'index.html');
+const STATIC = {
+  '/app.js': { file: 'app.js', type: 'application/javascript; charset=utf-8' },
+  '/style.css': { file: 'style.css', type: 'text/css; charset=utf-8' },
+};
 const rate = new Map();
 const emojiLog = new Map();   // uid -> времена последних смайликов
 const EMOJI_MAX = 5;          // максимум смайликов подряд
@@ -458,13 +462,24 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === 'GET' && (p === '/' || p === '/index.html')) {
       if (!fs.existsSync(INDEX)) {
-        return json(res, 500, { error: 'Не найден файл public/index.html' });
+        return json(res, 500, { error: 'Не найден файл index.html' });
       }
       res.writeHead(200, {
         'Content-Type': 'text/html; charset=utf-8',
         'Cache-Control': 'no-cache',
       });
       return fs.createReadStream(INDEX).pipe(res);
+    }
+
+    // статические файлы фронтенда (только эти два, лежат рядом с server.js)
+    if (req.method === 'GET' && STATIC[p]) {
+      const f = path.join(__dirname, STATIC[p].file);
+      if (!fs.existsSync(f)) return json(res, 404, { error: 'Не найден файл ' + STATIC[p].file });
+      res.writeHead(200, {
+        'Content-Type': STATIC[p].type,
+        'Cache-Control': 'no-cache',
+      });
+      return fs.createReadStream(f).pipe(res);
     }
 
     if (req.method === 'GET' && p === '/events') {
